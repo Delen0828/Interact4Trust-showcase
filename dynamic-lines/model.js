@@ -13,12 +13,13 @@ export function ratioPosition(ratio) {
   return (1 - Math.log2(clamp(ratio, 0.5, 2))) / 2;
 }
 
-// Progress is a visual encoding, not a shared clock: 1.5x travels 50% faster.
-export const motionSpeed = ratio => 5 * clamp(ratio, 0.5, 2);
+// Value mode encodes price in speed; equal mode uses a shared constant pace.
+export const motionSpeed = (ratio, motion = 'value') => motion === 'equal' ? 5 : 5 * clamp(ratio, 0.5, 2);
 
-// All heads use the same scale. Once the leader reaches the edge, value gaps
-// remain proportional and a price crossing is also a horizontal overtaking.
-export function lineHeadPositions(ratios, progress) {
+// Equal-speed heads stay aligned. In value mode, heads preserve proportional
+// value gaps at the edge and cross horizontally when prices cross.
+export function lineHeadPositions(ratios, progress, motion = 'value') {
+  if (motion === 'equal') return ratios.map(() => clamp(progress, 0, 100));
   const values = ratios.map(ratio => clamp(ratio, 0.5, 2));
   const scale = Math.min(Math.max(0, progress), 100 / Math.max(...values));
   return values.map(value => value * scale);
@@ -39,6 +40,7 @@ export function readConfig(search, baseURL) {
   return {
     stocks: symbols.map((symbol, i) => ({ ...(STOCKS.find(s => s.symbol === symbol) || { name: symbol, open: 100, level: STOCKS[i].level }), symbol, color: STOCKS[i].color })),
     feed,
+    motion: params.get('motion') === 'equal' ? 'equal' : 'value',
     chartOnly: params.get('view') === 'chart',
     monitorOnly: params.get('view') === 'monitor',
   };

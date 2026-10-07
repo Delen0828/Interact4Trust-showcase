@@ -28,6 +28,9 @@ try {
 if (config) initialize(config);
 
 function initialize(config) {
+  const equalSpeed = config.motion === 'equal';
+  const chartName = equalSpeed ? 'Dynamic lines · Equal speed' : 'Dynamic lines';
+  document.title = `${chartName} · Interact4Trust`;
   const chartOnly = embedded && config.chartOnly;
   const monitorOnly = embedded && config.monitorOnly;
   document.body.classList.toggle('chart-only', chartOnly);
@@ -61,10 +64,10 @@ function initialize(config) {
         <span class="lab-label">Visualization lab &nbsp; / &nbsp; 02</span>
       </header>
       <section class="hero" aria-labelledby="page-title">
-        <div><p class="eyebrow">A study in motion</p><h1 id="page-title">Dynamic lines.</h1><p class="intro">Six stocks. One starting point. Watch value set the pace.</p></div>
+        <div><p class="eyebrow">A study in motion</p><h1 id="page-title">${equalSpeed ? 'Equal speed.' : 'Dynamic lines.'}</h1><p class="intro">${equalSpeed ? 'Six stocks. One shared pace. Compare value as lines move together.' : 'Six stocks. One starting point. Watch value set the pace.'}</p><nav class="version-links" aria-label="Chart version"><a id="value-version" ${equalSpeed ? '' : 'aria-current="page"'}>Value speed</a><a id="equal-version" ${equalSpeed ? 'aria-current="page"' : ''}>Equal speed</a></nav></div>
         <button class="button primary" type="button" data-share aria-label="Share or embed this monitor">${icon('share')}<span class="share-text">Share / Embed</span></button>
       </section>
-      <div class="embed-heading"><h1>${monitorOnly ? 'Stock monitor' : 'Dynamic lines'}</h1><button class="button" type="button" data-share>${icon('share')} Share</button></div>
+      <div class="embed-heading"><h1>${monitorOnly ? 'Stock monitor' : chartName}</h1><button class="button" type="button" data-share>${icon('share')} Share</button></div>
       <section aria-label="Stock price monitor">
         <div class="monitor-meta">
           <span id="feed-status" class="feed-status" role="status"><span class="status-dot"></span><span id="feed-label">${demo ? 'Simulated feed' : 'Connecting to quote feed'}</span></span>
@@ -78,13 +81,13 @@ function initialize(config) {
           <div class="chart-controls"><button id="pause" class="button" type="button" aria-pressed="false">${icon('pause')}<span>Pause</span></button><button id="reset" class="button icon-button" type="button" title="Restart drawing trails" aria-label="Restart drawing trails">${icon('reset')}</button></div>
         </header>
         <div class="chart-stage" id="chart-stage">
-          <svg id="line-chart" role="img" aria-labelledby="svg-title svg-description"><title id="svg-title">Six stock prices relative to their daily opening prices</title><desc id="svg-description">The logarithmic vertical axis runs from half to twice the opening price, with one times at the center. Higher values draw faster from left to right. Line heads share a horizontal value scale, so higher values stay ahead even at the right edge and overtake in both axes when prices cross. Horizontal position does not represent a shared time axis.</desc><defs><clipPath id="plot-clip"><rect id="clip-rect"/></clipPath></defs><g id="grid"></g><g id="lines" clip-path="url(#plot-clip)"></g><g id="labels"></g><g id="axis"></g></svg>
+          <svg id="line-chart" role="img" aria-labelledby="svg-title svg-description"><title id="svg-title">Six stock prices relative to their daily opening prices</title><desc id="svg-description">The logarithmic vertical axis runs from half to twice the opening price, with one times at the center. ${equalSpeed ? 'All lines advance from left to right at the same constant speed, regardless of value. Heads stay aligned and trails scroll together at the right edge. Horizontal spacing represents shared active drawing time.' : 'Higher values draw faster from left to right. Line heads share a horizontal value scale, so higher values stay ahead even at the right edge and overtake in both axes when prices cross. Horizontal position does not represent a shared time axis.'}</desc><defs><clipPath id="plot-clip"><rect id="clip-rect"/></clipPath></defs><g id="grid"></g><g id="lines" clip-path="url(#plot-clip)"></g><g id="labels"></g><g id="axis"></g></svg>
           <div class="empty-message" id="empty-message" hidden><span>All lines are hidden.</span><button class="button" id="show-all" type="button">Show all six stocks</button></div>
         </div>
-        <footer class="chart-footer"><div class="motion-key">${icon('motion')}<span><strong>Higher value. Faster line.</strong> <span class="speed-explanation">1.5× moves 50% faster than 1×.</span></span></div><span class="visible-count" id="visible-count">6 / 6 visible</span></footer>
+        <footer class="chart-footer"><div class="motion-key">${icon('motion')}<span><strong>${equalSpeed ? 'Every line. Same speed.' : 'Higher value. Faster line.'}</strong> <span class="speed-explanation">${equalSpeed ? 'Values change height, while trails advance together.' : '1.5× moves 50% faster than 1×.'}</span></span></div><span class="visible-count" id="visible-count">6 / 6 visible</span></footer>
       </section>
       <p class="error-message" id="feed-error" role="status" hidden></p>
-      <footer class="page-footer"><p id="data-note">${demo ? 'Illustrative prices, refreshed every second. Simulated opening prices and movements are not market quotes.' : 'Prices from your configured quote feed. Opening prices use the feed’s trading session.'}<br>Logarithmic scale · 0.5× to 2× · Independent drawing progress, not a shared time axis.</p><span class="credit">Made for interaction.</span></footer>
+      <footer class="page-footer"><p id="data-note">${demo ? 'Illustrative prices, refreshed every second. Simulated opening prices and movements are not market quotes.' : 'Prices from your configured quote feed. Opening prices use the feed’s trading session.'}<br>Logarithmic scale · 0.5× to 2× · ${equalSpeed ? 'Shared active drawing time · Equal horizontal speed.' : 'Independent drawing progress, not a shared time axis.'}</p><span class="credit">Made for interaction.</span></footer>
     </main>
     <dialog id="share-dialog" aria-labelledby="share-title">
       <div class="dialog-heading"><h2 id="share-title">Take the motion with you.</h2><button class="close-button" id="close-share" type="button" aria-label="Close sharing dialog">×</button></div>
@@ -95,6 +98,11 @@ function initialize(config) {
       <p id="copy-status" role="status"></p>
     </dialog>`;
   if (!embedded) $('.embed-heading').hidden = true;
+  for (const mode of ['value', 'equal']) {
+    const url = new URL(location.href);
+    url.searchParams.set('motion', mode);
+    $(`#${mode}-version`).href = url.href;
+  }
   $(`input[name="embed-view"][value="${chartOnly ? 'chart' : monitorOnly ? 'monitor' : 'dashboard'}"]`).checked = true;
 
   class RollingNumber {
@@ -195,7 +203,7 @@ function initialize(config) {
       svg('line', { x1: x, x2: x, y1: plot.top, y2: plot.bottom, class: 'grid-line' }, $('#grid'));
     }
     svg('text', { x: plot.left + 9, y: ratioY(1) - 9, class: 'axis-text baseline-caption' }, $('#axis')).textContent = 'TODAY’S OPEN';
-    svg('text', { x: plot.left, y: height - 13, class: 'axis-text' }, $('#axis')).textContent = width < 430 ? 'Independent trails' : 'Each line advances independently';
+    svg('text', { x: plot.left, y: height - 13, class: 'axis-text' }, $('#axis')).textContent = equalSpeed ? 'Shared drawing time →' : width < 430 ? 'Independent trails' : 'Each line advances independently';
     svg('text', { x: plot.right, y: height - 13, class: 'axis-text', 'text-anchor': 'end' }, $('#axis')).textContent = 'Motion →';
     draw();
   }
@@ -205,7 +213,7 @@ function initialize(config) {
   function draw() {
     if (!plot || monitorOnly) return;
     const visible = [];
-    const heads = lineHeadPositions(series.map(stock => stock.displayRatio), sharedProgress);
+    const heads = lineHeadPositions(series.map(stock => stock.displayRatio), sharedProgress, config.motion);
     for (const [index, stock] of series.entries()) {
       if (!stock.visible || !stock.history.length) continue;
       const head = heads[index];
@@ -217,7 +225,7 @@ function initialize(config) {
       stock.path.setAttribute('d', `${path} L${x.toFixed(2)},${y.toFixed(2)}`);
       stock.dot.setAttribute('cx', x); stock.dot.setAttribute('cy', y);
       stock.path.dataset.ratio = stock.displayRatio.toFixed(4);
-      stock.path.dataset.speed = motionSpeed(stock.displayRatio).toFixed(4);
+      stock.path.dataset.speed = motionSpeed(stock.displayRatio, config.motion).toFixed(4);
       stock.path.dataset.progress = stock.distance.toFixed(4);
       visible.push({ stock, x, y, labelY: y });
     }
@@ -326,7 +334,7 @@ function initialize(config) {
     for (const stock of series) {
       const t = clamp((now - stock.transitionAt) / 620, 0, 1);
       stock.displayRatio = reducedMotion.matches ? stock.ratio : stock.fromRatio + (stock.ratio - stock.fromRatio) * (1 - (1 - t) ** 3);
-      stock.distance += motionSpeed(stock.displayRatio) * dt;
+      stock.distance += motionSpeed(stock.displayRatio, config.motion) * dt;
       const previous = stock.history.at(-1);
       if (!previous || stock.distance - previous.distance > 0.55) stock.history.push({ distance: stock.distance, ratio: stock.displayRatio });
       while (stock.history.length > 2 && stock.history[1].distance < stock.distance - 102) stock.history.shift();
@@ -366,6 +374,7 @@ function initialize(config) {
     const url = new URL(file, location.href);
     if (new URLSearchParams(location.search).has('symbols')) url.searchParams.set('symbols', series.map(s => s.symbol).join(','));
     if (config.feed) url.searchParams.set('feed', config.feed);
+    if (equalSpeed) url.searchParams.set('motion', 'equal');
     if (view === 'chart' || view === 'monitor') url.searchParams.set('view', view);
     return url.href;
   }
@@ -373,7 +382,7 @@ function initialize(config) {
     const view = $('input[name="embed-view"]:checked').value;
     $('#share-url').value = shareURL('index.html');
     const url = shareURL('embed.html', view).replaceAll('&', '&amp;').replaceAll('"', '&quot;');
-    $('#share-code').value = `<iframe\n  src="${url}"\n  title="Dynamic lines — ${demo ? 'simulated' : 'live'} stock ${view === 'chart' ? 'comparison' : 'monitor'}"\n  width="1100" height="${view === 'chart' ? '420' : view === 'monitor' ? '240' : '760'}"\n  style="border:0;width:100%;max-width:1100px"\n  loading="lazy"\n></iframe>`;
+    $('#share-code').value = `<iframe\n  src="${url}"\n  title="${chartName} — ${demo ? 'simulated' : 'live'} stock ${view === 'chart' ? 'comparison' : 'monitor'}"\n  width="1100" height="${view === 'chart' ? '420' : view === 'monitor' ? '240' : '760'}"\n  style="border:0;width:100%;max-width:1100px"\n  loading="lazy"\n></iframe>`;
   }
   document.querySelectorAll('[data-share]').forEach(button => button.addEventListener('click', () => { updateShare(); $('#copy-status').textContent = ''; $('#share-dialog').showModal(); }));
   $('#close-share').addEventListener('click', () => $('#share-dialog').close());

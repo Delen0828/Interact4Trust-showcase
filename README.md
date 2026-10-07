@@ -5,6 +5,7 @@ A static showcase of the interactive humidity visualizations used in Interact4Tr
 - [Live showcase](https://delen0828.github.io/Interact4Trust-showcase/)
 - [Participant experience](https://delen0828.github.io/Interact4Trust-showcase/participant.html)
 - [Dynamic lines stock monitor](https://delen0828.github.io/Interact4Trust-showcase/dynamic-lines/)
+- [Equal-speed dynamic chart](https://delen0828.github.io/Interact4Trust-showcase/dynamic-lines/?motion=equal)
 
 ## Run locally
 

@@ -36,6 +36,24 @@ Click a stock card to toggle its line. Pause freezes polling and drawing; Resume
 
 For only the chart, use `embed.html?view=chart` and a height of `420`. For only the six rolling prices and feed status, use `embed.html?view=monitor` and a height of `240` on desktop (about `480` on phones). Stock cards stack on smaller screens; increase the iframe height for a phone layout or allow the frame to scroll. The chart-only view fits its iframe's height.
 
+## Equal-speed version
+
+Open `index.html?motion=equal` or select **Equal speed** beneath the page title. All six lines advance at the same constant horizontal speed (5% of the plot width per second of active drawing), regardless of price. Heads stay aligned, reach the right edge together after 20 seconds, and scroll their histories together. Vertical positions still show price relative to the daily open. Pause, restart, line visibility, live feeds, and reduced motion work in both versions.
+
+**Share / Embed** preserves `motion=equal` in the standalone link and all three iframe views. For a chart-only embed:
+
+```html
+<iframe
+  src="https://delen0828.github.io/Interact4Trust-showcase/dynamic-lines/embed.html?motion=equal&amp;view=chart"
+  title="Dynamic lines — equal speed"
+  width="1100" height="420"
+  style="border:0;width:100%;max-width:1100px"
+  loading="lazy"
+></iframe>
+```
+
+Omit `view=chart` for the monitor and chart together. The original value-speed version remains the default.
+
 ## Connect real quotes
 
 Supply your browser-accessible quote endpoint with the `feed` URL parameter. The page polls at one-second intervals, allows one request at a time, and cancels requests after five seconds. The endpoint must allow cross-origin requests when hosted elsewhere. Provider credentials should stay on your own server; the feed URL is public and appears in shared links.
@@ -71,4 +89,4 @@ Optionally pass exactly six unique ticker symbols: `?symbols=AAPL,MSFT,GOOGL,AMZ
 node --test tests/dynamic-lines.test.mjs
 ```
 
-With the repository root served, open <http://localhost:8000/tests/dynamic-lines.html> to exercise real iframe rendering, updates, relative drawing speeds, horizontal ordering after the border, pause/resume, visibility, all three sharing views, reduced motion, and malformed URLs. The border check lets all six trails advance past their initial window, so the suite takes about 40 seconds.
+With the repository root served, open <http://localhost:8000/tests/dynamic-lines.html> to exercise real iframe rendering, updates, relative drawing speeds, horizontal ordering after the border, pause/resume, visibility, all three sharing views, reduced motion, and malformed URLs. The border check lets all six trails advance past their initial window, so the suite takes about 70 seconds.

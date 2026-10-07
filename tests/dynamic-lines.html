@@ -132,6 +132,45 @@ for (const view of ['', '?view=chart', '?view=monitor']) {
     } finally { embed.remove(); }
   });
 }
+await check('equal-speed lines advance and scroll together, with shareable embed views', async () => {
+  const equal = await load('../dynamic-lines/index.html?motion=equal');
+  try {
+    const d = equal.contentDocument;
+    const paths = [...d.querySelectorAll('.price-line')];
+    const aligned = () => {
+      assert(new Set(paths.map(path => path.dataset.progress)).size === 1, 'drawing distances diverged');
+      assert(paths.every(path => Number(path.dataset.speed) === 5), 'speed depends on value');
+      assert(new Set([...d.querySelectorAll('.endpoint')].map(dot => dot.getAttribute('cx'))).size === 1, 'heads are not aligned');
+    };
+    await wait(1200);
+    aligned();
+    const before = Number(paths[0].dataset.progress);
+    await wait(1100);
+    assert(Number(paths[0].dataset.progress) > before, 'lines are not advancing');
+    aligned();
+    for (let tries = 0; Number(paths[0].dataset.progress) <= 105 && tries < 250; tries++) await wait(100);
+    assert(Number(paths[0].dataset.progress) > 105, 'trails did not reach scrolling');
+    aligned();
+    d.getElementById('pause').click();
+    const paused = paths[0].dataset.progress;
+    await wait(1100);
+    assert(paths.every(path => path.dataset.progress === paused), 'pause changed progress');
+    d.getElementById('reset').click();
+    assert(paths.every(path => Number(path.dataset.progress) === 0), 'restart did not clear progress');
+    d.querySelector('[data-share]').click();
+    assert(new URL(d.getElementById('share-url').value).searchParams.get('motion') === 'equal', 'shared link lost mode');
+    for (const view of ['dashboard', 'chart', 'monitor']) {
+      d.querySelector(`input[value="${view}"]`).click();
+      const code = d.getElementById('share-code').value;
+      const src = code.match(/src="([^"]+)"/)[1].replaceAll('&amp;', '&');
+      assert(new URL(src).searchParams.get('motion') === 'equal', 'iframe lost equal-speed mode');
+      const embed = await load(src);
+      assert(embed.contentDocument.body.dataset.ready === 'true', 'equal-speed embed failed');
+      assert(embed.contentDocument.title.includes('Equal speed'), 'embed selected wrong version');
+      embed.remove();
+    }
+  } finally { equal.remove(); }
+});
 await check('malformed symbols fail visibly', async () => {
   const invalid = await load('../dynamic-lines/embed.html?symbols=AAPL');
   assert(invalid.contentDocument.body.dataset.ready === 'error', 'invalid symbols silently accepted');

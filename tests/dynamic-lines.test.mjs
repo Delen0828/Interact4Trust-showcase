@@ -90,3 +90,14 @@ test('demo uses the New York session date and keeps all prices positive and in r
     }
   }
 });
+
+
+test('equal-speed mode keeps all heads aligned regardless of price or scrolling', () => {
+  const ratios = [0.1, 0.5, 1, 1.5, 2, 4];
+  assert.deepEqual(ratios.map(ratio => motionSpeed(ratio, 'equal')), Array(6).fill(5));
+  for (const progress of [0, 25, 100, 200, 1000000]) {
+    assert.deepEqual(lineHeadPositions(ratios, progress, 'equal'), Array(6).fill(Math.min(progress, 100)));
+  }
+  assert.equal(readConfig('?motion=equal', 'http://localhost/').motion, 'equal');
+  assert.equal(readConfig('', 'http://localhost/').motion, 'value');
+});
