@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Dynamic lines browser checks</title>
+<style>body{font:15px system-ui;padding:24px;color:#252b3b}iframe{display:block;width:1100px;max-width:100%;height:760px;border:1px solid #ddd;margin:16px 0}li{margin:9px 0}.pass{color:#176344}.fail{color:#b14d68}</style>
+<h1>Dynamic lines browser checks</h1><p id="status">Running…</p><ol id="results"></ol><div id="frames"></div>
+<script type="module">
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+let passed = 0, failed = 0;
+async function check(name, fn) {
+  const item = document.createElement('li');
+  try { await fn(); item.textContent = `PASS: ${name}`; item.className = 'pass'; passed++; }
+  catch (error) { item.textContent = `FAIL: ${name}: ${error.message}`; item.className = 'fail'; failed++; }
+  document.getElementById('results').append(item);
+}
+async function load(url) {
+  const frame = document.createElement('iframe'); frame.src = url;
+  document.getElementById('frames').append(frame);
+  await new Promise(resolve => { frame.onload = resolve; });
+  for (let tries = 0; tries < 100; tries++) {
+    if (['true', 'error'].includes(frame.contentDocument.body.dataset.ready)) return frame;
+    await wait(50);
+  }
+  throw new Error(`Loading timed out: ${url}`);
+}
+const frame = await load('../dynamic-lines/index.html');
+const doc = frame.contentDocument;
+const prices = () => [...doc.querySelectorAll('.rolling-number')].map(p => p.getAttribute('aria-label')).join(',');
+const progress = () => [...doc.querySelectorAll('.price-line')].map(p => p.dataset.progress).join(',');
+await check('six rolling prices and explicit simulated feed label', async () => {
+  assert(doc.body.dataset.ready === 'true', 'monitor did not render');
+  assert(doc.querySelectorAll('.stock').length === 6, 'expected six cards');
+  assert(prices().includes('$'), 'prices missing');
+  assert(doc.getElementById('feed-label').textContent === 'Simulated feed', 'demo source must be labeled');
+});
+await check('prices refresh after one second', async () => {
+  const before = prices(); await wait(1200); assert(prices() !== before, 'prices did not update');
+});
+await check('opening price is centered between 0.5x and 2x', async () => {
+  const ticks = [...doc.querySelectorAll('#axis text')];
+  const position = text => Number(ticks.find(t => t.textContent === text).getAttribute('y'));
+  assert(Math.abs(position('1×') - (position('0.5×') + position('2×')) / 2) < .001, '1x is not centered');
+});
+await check('higher valued lines move faster in actual rendered frames', async () => {
+  if (frame.contentWindow.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  await wait(800);
+  const paths = [...doc.querySelectorAll('.price-line')];
+  const fastest = paths.reduce((a,b) => Number(a.dataset.ratio) > Number(b.dataset.ratio) ? a : b);
+  const slowest = paths.reduce((a,b) => Number(a.dataset.ratio) < Number(b.dataset.ratio) ? a : b);
+  const startFast = Number(fastest.dataset.progress), startSlow = Number(slowest.dataset.progress);
+  await wait(500);
+  assert(Number(fastest.dataset.progress) - startFast > Number(slowest.dataset.progress) - startSlow, 'high-value line did not advance faster');
+});
+await check('horizontal gaps and value ordering survive the chart border', async () => {
+  for (let tries = 0; tries < 450; tries++) {
+    await wait(100);
+    const paths = [...doc.querySelectorAll('.price-line')];
+    const heads = [...doc.querySelectorAll('.endpoint')].map(dot => ({ x: Number(dot.getAttribute('cx')), y: Number(dot.getAttribute('cy')) }));
+    for (const a of heads) for (const b of heads) {
+      if (a.y < b.y - .01) assert(a.x > b.x, 'a higher-value endpoint is not ahead in x');
+    }
+    if (paths.every(path => Number(path.dataset.progress) > 105)) {
+      assert(new Set(heads.map(head => head.x.toFixed(3))).size > 1, 'all heads collapsed at the right edge');
+      return;
+    }
+  }
+  throw new Error('trails did not reach the rolling region');
+});
+await check('pause freezes prices and trails; resume restarts them', async () => {
+  doc.getElementById('pause').click();
+  const beforePrices = prices(), beforeProgress = progress();
+  await wait(1200);
+  assert(prices() === beforePrices && progress() === beforeProgress, 'paused monitor changed');
+  assert(doc.getElementById('feed-label').textContent.includes('paused'), 'pause status missing');
+  doc.getElementById('pause').click(); await wait(1100);
+  assert(prices() !== beforePrices && progress() !== beforeProgress, 'resume failed');
+});
+await check('line visibility and all-hidden recovery', async () => {
+  doc.querySelectorAll('.stock').forEach(card => card.click());
+  assert(!doc.getElementById('empty-message').hidden, 'all-hidden state missing');
+  assert([...doc.querySelectorAll('.price-line')].every(path => path.style.display === 'none'), 'a line remained visible');
+  doc.getElementById('show-all').click();
+  assert(doc.getElementById('empty-message').hidden, 'recovery did not work');
+  assert(doc.getElementById('visible-count').textContent === '6 / 6 visible', 'visibility count wrong');
+});
+await check('restart clears trails without changing daily opening prices', async () => {
+  doc.getElementById('pause').click();
+  const before = prices(), date = doc.getElementById('session-label').textContent;
+  doc.getElementById('reset').click();
+  const dots = [...doc.querySelectorAll('.endpoint')].map(dot => Number(dot.getAttribute('cx')));
+  assert(new Set(dots).size === 1, 'trails did not restart at the left');
+  assert(prices() === before && doc.getElementById('session-label').textContent === date, 'restart changed price or baseline session');
+  doc.getElementById('pause').click();
+});
+await check('sharing provides standalone, chart-only, and monitor-only iframe URLs', async () => {
+  doc.querySelector('[data-share]').click();
+  assert(doc.getElementById('share-dialog').open, 'share dialog did not open');
+  assert(doc.getElementById('share-url').value.endsWith('/dynamic-lines/index.html'), 'standalone link incorrect');
+  assert(doc.getElementById('share-code').value.includes('/dynamic-lines/embed.html'), 'iframe URL missing');
+  const radio = doc.querySelector('input[value="chart"]'); radio.click();
+  assert(doc.getElementById('share-code').value.includes('view=chart'), 'chart-only parameter missing');
+  doc.querySelector('input[value="monitor"]').click();
+  assert(doc.getElementById('share-code').value.includes('view=monitor'), 'monitor-only parameter missing');
+  assert(doc.getElementById('share-code').value.includes('height="240"'), 'monitor-only frame height incorrect');
+  doc.getElementById('close-share').click();
+  assert(!doc.getElementById('share-dialog').open, 'dialog did not close');
+});
+for (const view of ['', '?view=chart', '?view=monitor']) {
+  await check(`real ${view === '?view=chart' ? 'chart-only' : view === '?view=monitor' ? 'monitor-only' : 'dashboard'} iframe fits without horizontal overflow`, async () => {
+    const embed = await load(`../dynamic-lines/embed.html${view}`);
+    try {
+      const d = embed.contentDocument, w = embed.contentWindow;
+      assert(d.body.dataset.ready === 'true', 'embed failed');
+      assert(w.getComputedStyle(d.querySelector('.hero')).display === 'none', 'gallery heading visible');
+      assert(d.documentElement.scrollWidth <= w.innerWidth, 'desktop horizontal overflow');
+      if (view === '?view=chart') assert(w.getComputedStyle(d.querySelector('.stocks')).display === 'none', 'cards visible in chart-only iframe');
+      if (view === '?view=monitor') {
+        assert(w.getComputedStyle(d.querySelector('.chart-panel')).display === 'none', 'chart visible in monitor-only iframe');
+        assert(d.querySelectorAll('article.stock').length === 6, 'monitor-only prices should be informational cards');
+        assert(!d.querySelector('.stock[aria-pressed]'), 'monitor-only cards must not toggle hidden lines');
+        const before = d.querySelector('.rolling-number').getAttribute('aria-label');
+        await wait(1200);
+        assert(d.querySelector('.rolling-number').getAttribute('aria-label') !== before, 'monitor-only prices did not refresh');
+        d.querySelector('[data-share]').click();
+        assert(d.querySelector('input[value="monitor"]').checked, 'monitor-only share dialog selected a different view');
+        d.getElementById('close-share').click();
+      }
+      embed.style.width = '390px'; await wait(150);
+      assert(d.documentElement.scrollWidth <= w.innerWidth, 'phone horizontal overflow');
+      if (view === '?view=chart') assert(d.documentElement.scrollHeight <= w.innerHeight + 1, 'chart-only iframe overflows vertically');
+    } finally { embed.remove(); }
+  });
+}
+await check('malformed symbols fail visibly', async () => {
+  const invalid = await load('../dynamic-lines/embed.html?symbols=AAPL');
+  assert(invalid.contentDocument.body.dataset.ready === 'error', 'invalid symbols silently accepted');
+  assert(invalid.contentDocument.querySelector('.fatal'), 'error explanation missing'); invalid.remove();
+});
+frame.remove();
+document.getElementById('status').textContent = `${passed} passed, ${failed} failed`;
+document.body.dataset.result = failed ? 'fail' : 'pass';
+</script>
+</html>

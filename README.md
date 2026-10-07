@@ -4,6 +4,7 @@ A static showcase of the interactive humidity visualizations used in Interact4Tr
 
 - [Live showcase](https://delen0828.github.io/Interact4Trust-showcase/)
 - [Participant experience](https://delen0828.github.io/Interact4Trust-showcase/participant.html)
+- [Dynamic lines stock monitor](https://delen0828.github.io/Interact4Trust-showcase/dynamic-lines/)
 
 ## Run locally
 
@@ -38,9 +39,15 @@ Standalone pages render the same modules as the gallery, without its headings, c
 
 ## Deploy
 
-Set **Settings → Pages → Source → GitHub Actions**. Pushing to `main` runs `.github/workflows/pages.yml`, which publishes only `showcase/` at the Pages site root. The workflow uses GitHub's [static Pages deployment actions](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+Set **Settings → Pages → Source → GitHub Actions**. Pushing to `main` runs `.github/workflows/pages.yml`, which publishes `showcase/` at the Pages site root and the stock monitor at `/dynamic-lines/`. Tests and the reference GIF are excluded from deployment. The workflow uses GitHub's [static Pages deployment actions](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-This repository contains only the showcase and deployment configuration. Experiment runners, participant records, analyses, notebooks, paper materials, and the source repository's history are excluded. Bundled D3's license is in `showcase/vendor/D3-LICENSE`.
+This repository contains the showcases and deployment configuration. Experiment runners, participant records, analyses, notebooks, paper materials, and the source repository's history are excluded. Bundled D3's license is in `showcase/vendor/D3-LICENSE`.
+
+## Dynamic lines
+
+`dynamic-lines/` provides six stock prices with rolling digits, one-second refreshes, and animated trails whose speed follows price relative to the daily open. Its logarithmic axis ranges from 0.5× to 2×, with 1× at the center. Line heads preserve horizontal value gaps at the right edge and overtake in both axes when prices cross. The default feed is explicitly simulated; a configurable live JSON quote endpoint is supported. **Share / Embed** provides combined, chart-only, and monitor-only iframe views.
+
+Serve the repository root with `python3 -m http.server 8000` and open <http://localhost:8000/dynamic-lines/>. See [dynamic-lines/README.md](dynamic-lines/README.md) for live feed configuration, iframe examples, and verification.
 
 ## Verify
 

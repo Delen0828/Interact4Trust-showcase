@@ -23,9 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/configure-pages@v5
+      - name: Prepare both showcases
+        run: |
+          mkdir -p _site/dynamic-lines
+          cp -R showcase/. _site/
+          cp dynamic-lines/*.html dynamic-lines/*.css dynamic-lines/*.js dynamic-lines/*.svg _site/dynamic-lines/
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: showcase
+          path: _site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
