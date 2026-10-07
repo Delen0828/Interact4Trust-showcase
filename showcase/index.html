@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Study Conditions · Interact4Trust</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./vendor/d3.v7.min.js"></script>
+</head>
+<body>
+<main class="container">
+    <header class="header">
+        <h1>Study Conditions</h1>
+        <p>Supplementary material</p>
+        <a class="demo-link" href="./participant.html">Try the participant experience →</a>
+    </header>
+    <nav class="study-tabs" role="tablist" aria-label="Studies">
+        <button id="tab-study1" role="tab" aria-controls="study1" aria-selected="true" tabindex="0">Study 1</button>
+        <button id="tab-study2" role="tab" aria-controls="study2" aria-selected="false" tabindex="-1">Study 2</button>
+    </nav>
+    <div class="legend" aria-label="City legend">
+        <span class="city"><span class="swatch city-a"></span>City A</span>
+        <span class="city"><span class="swatch city-b"></span>City B</span>
+        <label for="alternativeOpacitySlider" hidden><i>EP</i> line opacity
+            <input type="range" id="alternativeOpacitySlider" min="0.1" max="1" step="0.1" value="0.2">
+            <output id="alternativeOpacityValue" for="alternativeOpacitySlider">0.2</output>
+        </label>
+        <label for="shadeOpacitySlider" hidden><i>CI</i> shade opacity
+            <input type="range" id="shadeOpacitySlider" min="0.1" max="1" step="0.1" value="0.2">
+            <output id="shadeOpacityValue" for="shadeOpacitySlider">0.2</output>
+        </label>
+        <label for="dateSelect" hidden>Start date
+            <select id="dateSelect"><option value="01/01">01/01</option><option value="05/01" selected>05/01</option></select>
+        </label>
+    </div>
+    <section id="study1" role="tabpanel" aria-labelledby="tab-study1" tabindex="0">
+        <header class="study-heading"><h2>Study 1</h2><p>Uncertainty information <span aria-hidden="true">›</span> Perceived interaction quality (PIQ)</p></header>
+        <div id="study1-groups"></div>
+    </section>
+    <section id="study2" role="tabpanel" aria-labelledby="tab-study2" tabindex="0" hidden>
+        <header class="study-heading"><h2>Study 2</h2><p>Uncertainty information <span aria-hidden="true">›</span> Interaction affordance <span aria-hidden="true">›</span> Data complexity</p></header>
+        <section class="uncertainty-group" aria-labelledby="study2-uncertainty-title">
+            <h3 id="study2-uncertainty-title">Uncertainty information</h3>
+            <div class="technique-options" role="group" aria-label="Uncertainty information">
+                <button data-technique="confidence_interval" aria-pressed="false"><i>CI (Confidence Interval)</i></button>
+                <button data-technique="ensemble_plot" aria-pressed="true"><i>EP (Ensemble Plot)</i></button>
+                <button data-technique="combined_plot" aria-pressed="false"><i>EPCI (Ensemble Plot w/ CI)</i></button>
+            </div>
+            <div id="study2-groups"></div>
+        </section>
+    </section>
+    <p id="status" role="status">Loading visualizations…</p>
+</main>
+<dialog id="share-dialog" aria-labelledby="share-title">
+    <div class="share-heading"><h2 id="share-title">Share this chart</h2><button id="close-share" type="button" aria-label="Close sharing dialog">×</button></div>
+    <p>The chart opens on its own, with its original interactions and animations.</p>
+    <label for="share-url">Chart link</label>
+    <input id="share-url" type="url" readonly>
+    <button type="button" data-copy="share-url">Copy link</button>
+    <label for="share-code">Embed in a website</label>
+    <textarea id="share-code" rows="4" readonly spellcheck="false"></textarea>
+    <button type="button" data-copy="share-code">Copy iframe</button>
+    <p id="copy-status" role="status"></p>
+</dialog>
+<script type="module" src="./showcase.js"></script>
+</body>
+</html>

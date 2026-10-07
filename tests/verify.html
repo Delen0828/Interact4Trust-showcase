@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Showcase regression checks</title>
+<style>body{font:16px system-ui;padding:24px}iframe{width:400px;height:350px;border:1px solid #ddd}li{margin:8px 0}.pass{color:#176344}.fail{color:#a9224d}</style>
+<h1>Showcase regression checks</h1><p id="status">Running…</p><ol id="results"></ol><div id="frames"></div>
+<script type="module">
+import { study1Groups, study2Groups } from '../showcase/display/conditions.js';
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const results = document.getElementById('results');
+let passed = 0, failed = 0;
+function assert(condition, message) { if (!condition) throw new Error(message); }
+async function check(name, test) {
+  const item = document.createElement('li');
+  try { await test(); item.textContent = `PASS: ${name}`; item.className = 'pass'; passed++; }
+  catch (error) { item.textContent = `FAIL: ${name}: ${error.message}`; item.className = 'fail'; failed++; }
+  results.append(item);
+}
+async function load(url) {
+  const frame = document.createElement('iframe'); frame.src = url;
+  document.getElementById('frames').append(frame);
+  await new Promise((resolve, reject) => { frame.onload = resolve; frame.onerror = reject; });
+  for (let tries = 0; tries < 150; tries++) {
+    const ready = frame.contentDocument.body.dataset.ready;
+    if (ready === 'true' || ready === 'error') return frame;
+    await wait(40);
+  }
+  throw new Error(`Timed out: ${url}`);
+}
+function paths(doc, number) { return [...doc.querySelectorAll(`#chart-${number} path[d]`)].map(p => p.getAttribute('d')); }
+function opacity(doc, selector) { return Number(doc.defaultView.getComputedStyle(doc.querySelector(selector)).opacity); }
+const gallery = await load('../showcase/index.html');
+await check('Study 1 gallery renders every chart and provides 16 independent links', async () => {
+  assert(gallery.contentDocument.body.dataset.ready === 'true', 'gallery failed');
+  assert(gallery.contentDocument.querySelectorAll('[data-chart]').length === 16, 'missing links');
+  for (const card of study1Groups.flatMap(g => g.cards)) assert(paths(gallery.contentDocument, card.number).length > 5, `empty chart ${card.number}`);
+});
+for (const [study, groups] of [['study1', study1Groups], ['study2', study2Groups]]) {
+  gallery.contentDocument.getElementById(`tab-${study}`).click();
+  await wait(250);
+  for (const technique of study === 'study1' ? ['ensemble_plot'] : ['confidence_interval', 'ensemble_plot', 'combined_plot']) {
+    if (study === 'study2') { gallery.contentDocument.querySelector(`[data-technique="${technique}"]`).click(); await wait(250); }
+    for (const card of groups.flatMap(g => g.cards)) {
+      await check(`iframe condition ${card.number} / ${technique}: rendering and interaction parity`, async () => {
+        const frame = await load(`../showcase/chart.html?condition=${card.number}&technique=${technique}`);
+        try {
+          const doc = frame.contentDocument;
+          assert(doc.body.dataset.ready === 'true', doc.getElementById('status').textContent);
+          assert(doc.defaultView.getComputedStyle(doc.body).padding === '0px', 'outer padding present');
+          assert(!doc.querySelector('h1,h2,h3,.condition-title,.chart-actions'), 'gallery chrome present');
+          assert(JSON.stringify(paths(doc, card.number)) === JSON.stringify(paths(gallery.contentDocument, card.number)), 'SVG paths differ from gallery');
+          if (card.number >= 21) {
+            const detail = technique === 'ensemble_plot' ? '.alternatives-group-a' : '.confidence-bounds-a';
+            assert(opacity(doc, detail) === 0, 'details should start hidden');
+            if ([21,22].includes(card.number)) {
+              const zone = doc.querySelector('.hover-zone-a');
+              zone.dispatchEvent(new frame.contentWindow.MouseEvent('mouseenter'));
+              await wait(300); assert(opacity(doc, detail) > 0, 'hover did not reveal detail');
+              zone.dispatchEvent(new frame.contentWindow.MouseEvent('mouseleave'));
+              await wait(300); assert(opacity(doc, detail) === 0, 'mouseleave did not hide detail');
+            } else if ([23,24].includes(card.number)) {
+              const checkbox = doc.querySelector('input[type=checkbox]');
+              assert(checkbox, 'click control missing'); checkbox.click();
+              await wait(300); assert(opacity(doc, detail) > 0, 'click did not reveal detail');
+              checkbox.click(); await wait(300); assert(opacity(doc, detail) === 0, 'second click did not hide detail');
+            } else {
+              const samples = [];
+              for (let i=0; i<32; i++) { await wait(120); samples.push(opacity(doc, detail)); }
+              const other = detail.replace('-a','-b');
+              assert(samples.some(value => value > 0) || opacity(doc, other) > 0, 'animation never revealed detail');
+            }
+          } else if ([4,5,6,18,19,20].includes(card.number)) {
+            const zone = doc.querySelector('.hover-zone-a');
+            zone.dispatchEvent(new frame.contentWindow.MouseEvent('mouseenter'));
+            await wait(500);
+            const selector = [5,19].includes(card.number) ? '.confidence-bounds-a' : '.alternatives-group-a';
+            let revealed = opacity(doc, selector) > 0;
+            for (let i=0; i<10 && !revealed; i++) { await wait(30); revealed ||= opacity(doc, selector) > 0; }
+            assert(revealed, 'hover did not reveal detail');
+            zone.dispatchEvent(new frame.contentWindow.MouseEvent('mouseleave')); await wait(500);
+            assert(opacity(doc, selector) === 0, 'mouseleave did not hide detail');
+          }
+        } finally { frame.remove(); }
+      });
+    }
+  }
+}
+gallery.remove();
+for (const query of ['condition=999', 'condition=21&technique=invalid', '']) {
+  await check(`Invalid chart URL fails visibly: ${query || '(missing condition)'}`, async () => {
+    const frame = await load(`../showcase/chart.html?${query}`);
+    assert(frame.contentDocument.body.dataset.ready === 'error', 'no error status'); frame.remove();
+  });
+}
+document.getElementById('status').textContent = `${passed} passed, ${failed} failed`;
+document.body.dataset.result = failed ? 'fail' : 'pass';
+</script></html>

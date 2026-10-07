@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Participant Experience · Interact4Trust</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./participant.css">
+    <script src="./vendor/d3.v7.min.js"></script>
+</head>
+<body class="participant-page">
+<main class="participant-shell">
+    <nav class="demo-nav" aria-label="Demo navigation"><a href="./index.html">← Study conditions</a><span>Participant experience · Demo only · Responses are not collected</span><button id="restart" type="button">Restart demo</button></nav>
+    <h1 id="page-title">Humidity Prediction</h1>
+    <section id="prediction-step" aria-labelledby="page-title" class="participant-layout">
+        <div class="chart-column">
+            <div class="participant-chart-card">
+                <span class="organization">Organization E</span>
+                <div class="chart-container"><svg id="participant-chart" class="chart-svg" width="760" height="500" viewBox="0 0 760 500" role="group" aria-label="Interactive humidity forecasts for Zorvani and Kelthar"></svg></div>
+                <div class="participant-legend"><span class="zorvani">━ <strong>Zorvani</strong></span><span class="kelthar">━ <strong>Kelthar</strong></span></div>
+                <div class="chart-caption">Shaded area shows the 95% confidence interval for the hovered city.<br><em>Hint: Hover or click a city's dashed prediction line to reveal details. You can also focus a line and press Enter.</em></div>
+            </div>
+            <p id="interaction-status" class="interaction-status" role="status">⚠ Interaction required: hover or click an interactive chart element to continue</p>
+            <p id="chart-status" role="status">Loading forecast…</p>
+        </div>
+        <form id="prediction-form" class="question-card">
+            <fieldset class="question">
+                <legend>Q1. The probability that the humidity of Zorvani will be higher than Kelthar on 06/30 is</legend>
+                <label class="sr-only" for="probability">Probability that Zorvani will have higher humidity, in percent</label>
+                <input id="probability" name="probability" type="range" min="0" max="100" value="50" aria-describedby="probability-status">
+                <div class="range-labels"><span class="kelthar">Kelthar will be higher</span><span class="zorvani">Zorvani will be higher</span></div>
+                <p id="probability-status" class="probability-status">Please move the slider to indicate your prediction<br><span>⚠ You must move the slider to continue</span></p>
+            </fieldset>
+            <fieldset class="question">
+                <legend>Q2. What is the estimated humidity of Zorvani and Kelthar on 06/30?</legend>
+                <div class="humidity-inputs"><label class="zorvani" for="humidity-a">Zorvani: <input id="humidity-a" name="humidityA" type="number" min="0" max="100" step="0.1" placeholder="Enter Humidity" required></label><label class="kelthar" for="humidity-b">Kelthar: <input id="humidity-b" name="humidityB" type="number" min="0" max="100" step="0.1" placeholder="Enter Humidity" required></label></div>
+            </fieldset>
+            <fieldset class="question">
+                <legend>Q3. How confident are you in this prediction?</legend>
+                <div id="confidence-options" class="rating-options"></div>
+                <div class="scale-labels"><span>Very Uncertain</span><span>Very Certain</span></div>
+            </fieldset>
+            <fieldset class="question">
+                <legend>Q4. If you are planning to travel after 6/01 and want the lower-humidity option, which city would you travel to: Zorvani or Kelthar?</legend>
+                <div class="choice-options">
+                    <label><input type="radio" name="destination" value="Zorvani" required><span>Zorvani</span></label>
+                    <label><input type="radio" name="destination" value="Kelthar"><span>Kelthar</span></label>
+                    <label><input type="radio" name="destination" value="No Preference"><span>No Preference</span></label>
+                </div>
+            </fieldset>
+            <p id="form-status" role="alert"></p>
+            <button id="continue" class="primary-button" type="submit" disabled>Continue to Surveys</button>
+        </form>
+    </section>
+    <section id="survey-step" class="followup-card" hidden aria-labelledby="survey-title">
+        <p class="step-label">Step 2 of 2</p><h2 id="survey-title" tabindex="-1">Reflect on the forecast</h2>
+        <p>These sample questions demonstrate the survey stage of the participant experience.</p>
+        <form id="survey-form">
+            <fieldset class="question"><legend>How much do you trust this forecast?</legend><div class="rating-options" data-rating="trust"></div><div class="scale-labels"><span>Not at all</span><span>Very much</span></div></fieldset>
+            <fieldset class="question"><legend>How easy was it to explore the uncertainty?</legend><div class="rating-options" data-rating="ease"></div><div class="scale-labels"><span>Very difficult</span><span>Very easy</span></div></fieldset>
+            <fieldset class="question"><legend>How useful was the uncertainty information for your decision?</legend><div class="rating-options" data-rating="usefulness"></div><div class="scale-labels"><span>Not useful</span><span>Very useful</span></div></fieldset>
+            <div class="followup-actions"><button id="back" type="button">Back to prediction</button><button class="primary-button" type="submit">Finish demo</button></div>
+        </form>
+    </section>
+    <section id="complete-step" class="followup-card" hidden aria-labelledby="complete-title">
+        <p class="step-label">Demo complete</p><h2 id="complete-title" tabindex="-1">Your participant experience</h2>
+        <p>You explored a forecast, made a prediction, and reflected on the interface. Your answers are shown below for this demo session only.</p>
+        <dl id="response-summary"></dl>
+        <a class="demo-link" href="./index.html">Explore all study conditions →</a>
+    </section>
+</main>
+<script type="module" src="./participant.js"></script>
+</body>
+</html>
