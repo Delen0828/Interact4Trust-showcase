@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MFV trust demo</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./mfv-trust.css">
+    <script src="./vendor/d3.v7.min.js"></script>
+</head>
+<body>
+    <main aria-label="Interactive multi-model forecast and trust curve">
+        <div class="charts">
+            <svg id="mfv" class="chart-svg" role="img" aria-label="Multi-model forecast"></svg>
+            <svg id="trust" class="chart-svg" role="img" aria-label="Trust by number of prediction models"></svg>
+        </div>
+        <div class="controls">
+            <input id="model-count" type="range" min="1" max="10" step="1" value="2" aria-label="Number of prediction models" disabled>
+        </div>
+        <output id="status" class="visually-hidden" role="status" aria-live="polite"></output>
+    </main>
+    <script type="module" src="./mfv-trust.js"></script>
+</body>
+</html>
